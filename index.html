@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maximus AI — Command Center</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a1a; color: #e0e0e0; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #1a1a3e 0%, #0d0d20 100%); padding: 28px 32px; border-bottom: 2px solid #7c3aed; }
+  .header h1 { font-size: 1.8rem; color: #fff; }
+  .header p { color: #a78bfa; margin-top: 4px; }
+  .header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .date-display { color: #888; font-size: 0.85rem; }
+
+  /* Stats Bar */
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; padding: 24px 32px; background: #0d0d20; }
+  .stat-card { background: #111128; border-radius: 12px; padding: 20px; border: 1px solid #1e1e3a; text-align: center; }
+  .stat-card .number { font-size: 2rem; font-weight: 800; color: #fff; }
+  .stat-card .label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .stat-card.purple .number { color: #a78bfa; }
+  .stat-card.gold .number { color: #f59e0b; }
+  .stat-card.green .number { color: #10b981; }
+  .stat-card.red .number { color: #ef4444; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; padding: 0 32px; background: #0d0d20; border-bottom: 1px solid #1e1e3a; }
+  .tab { padding: 14px 24px; cursor: pointer; color: #888; font-weight: 600; font-size: 0.9rem; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: #ccc; }
+  .tab.active { color: #a78bfa; border-bottom-color: #7c3aed; }
+
+  /* Content */
+  .content { padding: 24px 32px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Pipeline Board */
+  .pipeline-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; min-height: 400px; }
+  .pipeline-col { background: #111128; border-radius: 12px; padding: 16px; border: 1px solid #1e1e3a; }
+  .pipeline-col h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .pipeline-col .col-count { font-size: 0.75rem; color: #666; margin-bottom: 16px; }
+  .col-prospect h3 { color: #8b5cf6; }
+  .col-outreach h3 { color: #3b82f6; }
+  .col-engaged h3 { color: #f59e0b; }
+  .col-hot h3 { color: #ef4444; }
+  .col-closed h3 { color: #10b981; }
+
+  .deal-card { background: #0d0d20; border-radius: 8px; padding: 12px; margin-bottom: 10px; border: 1px solid #1e1e3a; cursor: pointer; transition: border-color 0.2s; }
+  .deal-card:hover { border-color: #7c3aed; }
+  .deal-card .deal-name { font-weight: 600; font-size: 0.9rem; color: #fff; }
+  .deal-card .deal-channel { font-size: 0.75rem; color: #888; margin-top: 2px; }
+  .deal-card .deal-product { font-size: 0.75rem; color: #a78bfa; margin-top: 4px; }
+  .deal-card .deal-value { font-size: 0.85rem; color: #f59e0b; font-weight: 700; margin-top: 6px; }
+  .deal-card .deal-date { font-size: 0.7rem; color: #555; margin-top: 4px; }
+
+  /* Add Lead Form */
+  .add-form { background: #111128; border-radius: 12px; padding: 24px; border: 1px solid #1e1e3a; margin-bottom: 24px; }
+  .add-form h3 { color: #a78bfa; margin-bottom: 16px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select, .form-group textarea { background: #0a0a1a; border: 1px solid #2a2a4a; border-radius: 6px; padding: 10px 12px; color: #fff; font-size: 0.9rem; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: #7c3aed; }
+  .btn { padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
+  .btn-primary { background: #7c3aed; color: #fff; }
+  .btn-primary:hover { background: #6d28d9; }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-success:hover { background: #059669; }
+  .btn-danger { background: #ef4444; color: #fff; font-size: 0.75rem; padding: 4px 10px; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-secondary { background: #2a2a4a; color: #ccc; }
+  .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+
+  /* Outreach Log Table */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 12px 16px; color: #888; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #1e1e3a; }
+  td { padding: 12px 16px; border-bottom: 1px solid #0d0d20; font-size: 0.9rem; }
+  .table-wrap { background: #111128; border-radius: 12px; border: 1px solid #1e1e3a; overflow-x: auto; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .badge-email { background: #3b82f622; color: #60a5fa; }
+  .badge-dm { background: #8b5cf622; color: #a78bfa; }
+  .badge-reddit { background: #ef444422; color: #f87171; }
+  .badge-tiktok { background: #10b98122; color: #34d399; }
+  .badge-replied { background: #f59e0b22; color: #fbbf24; }
+  .badge-sold { background: #10b98122; color: #34d399; }
+  .badge-ghosted { background: #ef444422; color: #f87171; }
+  .badge-pending { background: #6b728022; color: #9ca3af; }
+
+  /* Revenue Goals */
+  .goal-section { background: #111128; border-radius: 12px; padding: 24px; border: 1px solid #1e1e3a; margin-bottom: 24px; }
+  .goal-section h3 { color: #f59e0b; margin-bottom: 16px; }
+  .progress-bar-wrap { background: #0a0a1a; border-radius: 8px; height: 28px; overflow: hidden; margin: 8px 0; position: relative; }
+  .progress-bar { height: 100%; border-radius: 8px; transition: width 0.5s; display: flex; align-items: center; padding-left: 12px; font-size: 0.8rem; font-weight: 700; }
+  .progress-bar.purple { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+  .progress-bar.gold { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .progress-bar.green { background: linear-gradient(90deg, #10b981, #34d399); }
+  .goal-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .goal-label { color: #ccc; font-weight: 600; }
+  .goal-numbers { color: #888; font-size: 0.85rem; }
+
+  /* Products Section */
+  .products-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .product-card { background: #111128; border-radius: 12px; padding: 20px; border: 1px solid #1e1e3a; }
+  .product-card h4 { color: #fff; margin-bottom: 4px; }
+  .product-card .price { color: #f59e0b; font-weight: 800; font-size: 1.2rem; }
+  .product-card .product-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .product-card .ps { text-align: center; padding: 8px; background: #0a0a1a; border-radius: 6px; }
+  .product-card .ps .psn { font-size: 1.1rem; font-weight: 700; color: #fff; }
+  .product-card .ps .psl { font-size: 0.7rem; color: #666; }
+  .product-link { color: #a78bfa; font-size: 0.8rem; word-break: break-all; display: block; margin-top: 8px; }
+
+  /* Weekly Plan */
+  .week-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .day-card { background: #111128; border-radius: 12px; padding: 20px; border: 1px solid #1e1e3a; }
+  .day-card h4 { color: #a78bfa; margin-bottom: 12px; font-size: 1rem; }
+  .day-card li { margin: 8px 0; color: #ccc; font-size: 0.9rem; list-style: none; padding-left: 20px; position: relative; }
+  .day-card li::before { content: "→"; position: absolute; left: 0; color: #7c3aed; }
+  .day-card .time-est { font-size: 0.75rem; color: #666; margin-top: 8px; font-style: italic; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: #555; }
+  .empty-state .emoji { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { margin: 4px 0; }
+
+  /* ===== ENHANCED DEAL CARDS ===== */
+  .deal-card { position: relative; }
+  .deal-card .deal-biz { font-size: 0.75rem; color: #a78bfa; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .deal-card .deal-role { font-size: 0.7rem; color: #888; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .deal-card .deal-location { font-size: 0.7rem; color: #666; margin-top: 1px; }
+  .deal-card .deal-location::before { content: "📍 "; }
+
+  /* ===== CONTACT MODAL (Pipedrive-style) ===== */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: #111128; border-radius: 16px; border: 1px solid #2a2a5a; width: 640px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px 28px 16px; border-bottom: 1px solid #1e1e3a; }
+  .modal-header h2 { font-size: 1.3rem; color: #fff; margin: 0; }
+  .modal-header .modal-subtitle { font-size: 0.85rem; color: #a78bfa; margin-top: 2px; }
+  .modal-close { background: none; border: none; color: #888; font-size: 1.5rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; line-height: 1; }
+  .modal-close:hover { background: #1e1e3a; color: #fff; }
+  .modal-body { padding: 20px 28px 28px; }
+
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .contact-item { background: #0a0a1a; border-radius: 8px; padding: 12px 14px; border: 1px solid #1e1e3a; }
+  .contact-item .ci-label { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .contact-item .ci-value { font-size: 0.9rem; color: #fff; word-break: break-all; }
+  .contact-item .ci-value a { color: #a78bfa; text-decoration: none; }
+  .contact-item .ci-value a:hover { text-decoration: underline; }
+  .contact-item.full-width { grid-column: 1 / -1; }
+
+  .modal-section { margin-top: 20px; }
+  .modal-section h4 { font-size: 0.85rem; color: #a78bfa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #1e1e3a; }
+
+  .modal-notes-area { width: 100%; background: #0a0a1a; border: 1px solid #1e1e3a; border-radius: 8px; padding: 12px; color: #fff; font-size: 0.9rem; font-family: inherit; resize: vertical; min-height: 80px; }
+  .modal-notes-area:focus { outline: none; border-color: #7c3aed; }
+
+  .modal-stage-bar { display: flex; gap: 4px; margin-bottom: 16px; }
+  .modal-stage-btn { flex: 1; padding: 8px 4px; border-radius: 6px; border: 1px solid #1e1e3a; background: #0a0a1a; color: #888; font-size: 0.75rem; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.2s; }
+  .modal-stage-btn:hover { border-color: #7c3aed; color: #ccc; }
+  .modal-stage-btn.active-prospect { background: #8b5cf622; border-color: #8b5cf6; color: #a78bfa; }
+  .modal-stage-btn.active-outreach { background: #3b82f622; border-color: #3b82f6; color: #60a5fa; }
+  .modal-stage-btn.active-engaged { background: #f59e0b22; border-color: #f59e0b; color: #fbbf24; }
+  .modal-stage-btn.active-hot { background: #ef444422; border-color: #ef4444; color: #f87171; }
+  .modal-stage-btn.active-closed { background: #10b98122; border-color: #10b981; color: #34d399; }
+
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before { content: ""; position: absolute; left: 6px; top: 4px; bottom: 4px; width: 2px; background: #1e1e3a; }
+  .timeline-item { position: relative; padding: 10px 0 10px 16px; }
+  .timeline-item::before { content: ""; position: absolute; left: -18px; top: 14px; width: 10px; height: 10px; border-radius: 50%; background: #7c3aed; border: 2px solid #111128; }
+  .timeline-item.type-email::before { background: #3b82f6; }
+  .timeline-item.type-dm::before { background: #a78bfa; }
+  .timeline-item.type-sold::before { background: #10b981; }
+  .timeline-item.type-ghosted::before { background: #ef4444; }
+  .timeline-item .tl-date { font-size: 0.7rem; color: #666; }
+  .timeline-item .tl-action { font-size: 0.85rem; color: #ccc; margin-top: 2px; }
+  .timeline-item .tl-result { display: inline-block; margin-top: 4px; }
+  .timeline-item .tl-notes { font-size: 0.8rem; color: #888; margin-top: 4px; font-style: italic; }
+  .timeline-empty { color: #555; font-size: 0.85rem; text-align: center; padding: 20px; }
+
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #1e1e3a; }
+
+  @media (max-width: 900px) {
+    .pipeline-board { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .content { padding: 16px; }
+    .contact-grid { grid-template-columns: 1fr; }
+    .modal { width: 100%; border-radius: 0; max-height: 100vh; }
+  }
+
+  /* ===== TODAY'S PLAYBOOK ===== */
+  .playbook-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .playbook-header h2 { font-size: 1.4rem; color: #fff; }
+  .playbook-header .day-label { font-size: 1rem; color: #a78bfa; font-weight: 700; }
+  .playbook-progress { background: #0a0a1a; border-radius: 8px; height: 10px; overflow: hidden; margin-top: 6px; }
+  .playbook-progress-fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, #7c3aed, #10b981); transition: width 0.4s; }
+  .playbook-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+  @media (max-width: 1000px) { .playbook-grid { grid-template-columns: 1fr; } }
+
+  .checklist-card { background: #111128; border-radius: 12px; border: 1px solid #1e1e3a; overflow: hidden; margin-bottom: 16px; }
+  .checklist-card-header { padding: 14px 18px; background: #0d0d1e; border-bottom: 1px solid #1e1e3a; display: flex; justify-content: space-between; align-items: center; }
+  .checklist-card-header .ch-title { font-weight: 700; color: #fff; font-size: 0.95rem; }
+  .checklist-card-header .ch-count { font-size: 0.75rem; color: #666; }
+
+  .checklist-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 18px; border-bottom: 1px solid #0d0d1e; transition: background 0.15s; }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-item:hover { background: #0d0d1e; }
+  .checklist-item.done { opacity: 0.45; }
+  .checklist-item.done .ci-text { text-decoration: line-through; color: #555; }
+
+  .ci-checkbox { width: 20px; height: 20px; min-width: 20px; border-radius: 6px; border: 2px solid #3a3a6a; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; margin-top: 1px; }
+  .ci-checkbox:hover { border-color: #7c3aed; }
+  .ci-checkbox.checked { background: #7c3aed; border-color: #7c3aed; }
+  .ci-checkbox.checked::after { content: "✓"; color: #fff; font-size: 0.7rem; font-weight: 800; }
+
+  .ci-body { flex: 1; }
+  .ci-text { font-size: 0.9rem; color: #ccc; line-height: 1.4; }
+  .ci-meta { font-size: 0.75rem; color: #555; margin-top: 2px; }
+  .ci-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+
+  .btn-claude { padding: 4px 10px; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid #7c3aed44; background: #7c3aed18; color: #a78bfa; cursor: pointer; transition: all 0.15s; }
+  .btn-claude:hover { background: #7c3aed33; border-color: #7c3aed; }
+  .btn-goto { padding: 4px 10px; font-size: 0.72rem; font-weight: 600; border-radius: 6px; border: 1px solid #3b82f644; background: #3b82f618; color: #60a5fa; cursor: pointer; transition: all 0.15s; }
+  .btn-goto:hover { background: #3b82f633; border-color: #3b82f6; }
+
+  .quick-stats-col { display: flex; flex-direction: column; gap: 14px; }
+  .qs-card { background: #111128; border-radius: 12px; border: 1px solid #1e1e3a; padding: 18px; }
+  .qs-card h4 { font-size: 0.8rem; color: #a78bfa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .qs-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #0d0d1e; font-size: 0.88rem; }
+  .qs-row:last-child { border-bottom: none; }
+  .qs-label { color: #888; }
+  .qs-value { color: #fff; font-weight: 700; }
+  .qs-value.green { color: #10b981; }
+  .qs-value.amber { color: #f59e0b; }
+  .qs-value.purple { color: #a78bfa; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #10b981; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; z-index: 9999; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .focus-leads { background: #111128; border-radius: 12px; border: 1px solid #1e1e3a; padding: 18px; }
+  .focus-leads h4 { font-size: 0.8rem; color: #f59e0b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .focus-lead-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #0d0d1e; cursor: pointer; }
+  .focus-lead-row:last-child { border-bottom: none; }
+  .focus-lead-row:hover .flr-name { color: #a78bfa; }
+  .flr-name { font-size: 0.88rem; color: #ccc; font-weight: 600; }
+  .flr-meta { font-size: 0.75rem; color: #666; margin-top: 1px; }
+  .flr-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+  .flr-badge.outreach { background: #3b82f622; color: #60a5fa; }
+  .flr-badge.prospect { background: #8b5cf622; color: #a78bfa; }
+  .flr-badge.engaged { background: #f59e0b22; color: #fbbf24; }
+  .flr-badge.hot { background: #ef444422; color: #f87171; }
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .filter-bar input { flex: 1; min-width: 200px; background: #111128; border: 1px solid #2a2a4a; border-radius: 8px; padding: 9px 14px; color: #fff; font-size: 0.88rem; }
+  .filter-bar input:focus { outline: none; border-color: #7c3aed; }
+  .filter-bar select { background: #111128; border: 1px solid #2a2a4a; border-radius: 8px; padding: 9px 12px; color: #ccc; font-size: 0.85rem; cursor: pointer; }
+  .filter-bar select:focus { outline: none; border-color: #7c3aed; }
+  .filter-active-badge { background: #7c3aed22; border: 1px solid #7c3aed66; color: #a78bfa; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+
+  /* ===== DRAG AND DROP ===== */
+  .deal-card[draggable="true"] { cursor: grab; }
+  .deal-card.dragging { opacity: 0.4; transform: scale(0.97); }
+  .pipeline-col.drag-over { border-color: #7c3aed; background: #111128ee; box-shadow: 0 0 0 2px #7c3aed44 inset; }
+  .drop-hint { text-align: center; padding: 16px; font-size: 0.8rem; color: #7c3aed88; border: 2px dashed #7c3aed44; border-radius: 8px; margin-top: 8px; display: none; }
+  .pipeline-col.drag-over .drop-hint { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <div>
+      <h1>Maximus AI — Command Center</h1>
+      <p>Track leads, outreach, and revenue across all channels</p>
+    </div>
+    <div class="date-display" id="currentDate"></div>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card purple">
+    <div class="number" id="totalLeads">0</div>
+    <div class="label">Total Leads</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="outreachSent">0</div>
+    <div class="label">Outreach Sent</div>
+  </div>
+  <div class="stat-card gold">
+    <div class="number" id="repliesReceived">0</div>
+    <div class="label">Replies</div>
+  </div>
+  <div class="stat-card green">
+    <div class="number" id="totalSales">0</div>
+    <div class="label">Sales</div>
+  </div>
+  <div class="stat-card gold">
+    <div class="number" id="totalRevenue">$0</div>
+    <div class="label">Revenue</div>
+  </div>
+  <div class="stat-card">
+    <div class="number" id="conversionRate">0%</div>
+    <div class="label">Conversion</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="today">🏠 Today's Playbook</div>
+  <div class="tab" data-tab="pipeline">📋 Pipeline Board</div>
+  <div class="tab" data-tab="leads">➕ Manage Leads</div>
+  <div class="tab" data-tab="outreach">📤 Outreach Log</div>
+  <div class="tab" data-tab="goals">🎯 Revenue Goals</div>
+  <div class="tab" data-tab="products">📦 Products</div>
+  <div class="tab" data-tab="weekly">📅 Weekly Plan</div>
+</div>
+
+<div class="content">
+
+  <!-- ============ TODAY'S PLAYBOOK ============ -->
+  <div class="tab-content active" id="tab-today">
+    <div class="playbook-header">
+      <div>
+        <div class="day-label" id="playbookDayLabel">—</div>
+        <h2 id="playbookDateHeading">—</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+          <div style="width:200px;">
+            <div style="font-size:0.75rem;color:#666;margin-bottom:4px;"><span id="playbookDoneCount">0</span> of <span id="playbookTotalCount">0</span> tasks complete</div>
+            <div class="playbook-progress"><div class="playbook-progress-fill" id="playbookProgressFill" style="width:0%"></div></div>
+          </div>
+          <button class="btn btn-secondary" onclick="resetDayChecklist()" style="font-size:0.78rem;padding:6px 14px;">Reset Today</button>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:0.8rem;color:#666;">Pipeline snapshot</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#a78bfa;margin-top:2px;" id="pb-hotCount">— hot leads</div>
+        <div style="font-size:0.85rem;color:#f59e0b;" id="pb-followUpCount">— follow-ups due</div>
+      </div>
+    </div>
+
+    <div class="playbook-grid">
+      <!-- LEFT: Checklists -->
+      <div id="playbookChecklistsCol"></div>
+
+      <!-- RIGHT: Quick stats + focus leads -->
+      <div class="quick-stats-col">
+        <div class="qs-card">
+          <h4>Pipeline Health</h4>
+          <div class="qs-row"><span class="qs-label">Prospects</span><span class="qs-value purple" id="pb-prospects">0</span></div>
+          <div class="qs-row"><span class="qs-label">Outreach Sent</span><span class="qs-value" id="pb-outreach">0</span></div>
+          <div class="qs-row"><span class="qs-label">Engaged / Replied</span><span class="qs-value amber" id="pb-engaged">0</span></div>
+          <div class="qs-row"><span class="qs-label">Hot Leads</span><span class="qs-value" style="color:#ef4444" id="pb-hot">0</span></div>
+          <div class="qs-row"><span class="qs-label">Closed / Sold</span><span class="qs-value green" id="pb-sold">0</span></div>
+        </div>
+
+        <div class="qs-card">
+          <h4>This Week</h4>
+          <div class="qs-row"><span class="qs-label">Outreach Sent</span><span class="qs-value" id="pb-weekOutreach">0</span></div>
+          <div class="qs-row"><span class="qs-label">Total Leads</span><span class="qs-value purple" id="pb-totalLeads">0</span></div>
+          <div class="qs-row"><span class="qs-label">Revenue</span><span class="qs-value green" id="pb-revenue">$0</span></div>
+        </div>
+
+        <div class="focus-leads" id="playbookFocusLeads">
+          <h4>🔥 Priority Contacts Today</h4>
+          <div id="focusLeadsList"><div style="color:#555;font-size:0.85rem;">Loading...</div></div>
+        </div>
+
+        <div class="qs-card">
+          <h4>Products Quick Links</h4>
+          <div class="qs-row"><a href="https://maximus315.gumroad.com/l/sdbdm" target="_blank" style="color:#a78bfa;font-size:0.85rem;">Mega Bundle ($59) ↗</a></div>
+          <div class="qs-row"><a href="https://maximus315.gumroad.com" target="_blank" style="color:#888;font-size:0.85rem;">All Products ↗</a></div>
+          <div class="qs-row" style="cursor:pointer;" onclick="document.querySelector('[data-tab=pipeline]').click()"><span style="color:#60a5fa;font-size:0.85rem;">View Pipeline Board →</span></div>
+          <div class="qs-row" style="cursor:pointer;" onclick="document.querySelector('[data-tab=outreach]').click()"><span style="color:#60a5fa;font-size:0.85rem;">Log Outreach →</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PIPELINE BOARD ============ -->
+  <div class="tab-content" id="tab-pipeline">
+    <div class="filter-bar">
+      <input type="text" id="pipelineSearch" placeholder="🔍 Search by name, company, location, notes..." oninput="refreshPipeline()">
+      <select id="filterChannel" onchange="refreshPipeline()">
+        <option value="">All Channels</option>
+        <option value="Email">Cold Email</option>
+        <option value="LinkedIn">LinkedIn</option>
+        <option value="Twitter/X">Twitter/X</option>
+        <option value="Instagram">Instagram</option>
+        <option value="Reddit">Reddit</option>
+      </select>
+      <select id="filterProduct" onchange="refreshPipeline()">
+        <option value="">All Products</option>
+        <option value="Mega Bundle">Mega Bundle</option>
+        <option value="3-Pack Bundle">3-Pack Bundle</option>
+        <option value="AI Side Hustle Bible">AI Side Hustle</option>
+        <option value="Freelancer Starter Kit">Freelancer Kit</option>
+        <option value="Social Media Planner">Social Planner</option>
+        <option value="AI Prompt Pack">Prompt Pack</option>
+        <option value="Caption Templates">Caption Templates</option>
+      </select>
+      <select id="filterAudience" onchange="refreshPipeline()">
+        <option value="">All Audiences</option>
+        <option value="Small Biz">Small Biz</option>
+        <option value="Content Creator">Content Creator</option>
+        <option value="Freelancer">Freelancer</option>
+        <option value="AI Enthusiast">AI Enthusiast</option>
+      </select>
+      <button class="btn btn-secondary" onclick="clearPipelineFilters()" style="padding:8px 14px;font-size:0.8rem;">✕ Clear</button>
+      <span id="filterActiveBadge" class="filter-active-badge" style="display:none;">Filtered</span>
+    </div>
+
+    <div class="pipeline-board">
+      <div class="pipeline-col col-prospect"
+        ondragover="handleDragOver(event,'prospect')" ondrop="handleDrop(event,'prospect')" ondragleave="handleDragLeave(event)">
+        <h3>Prospect</h3>
+        <div class="col-count" id="count-prospect">0 leads</div>
+        <div id="col-prospect-cards"></div>
+        <div class="drop-hint">Drop here</div>
+      </div>
+      <div class="pipeline-col col-outreach"
+        ondragover="handleDragOver(event,'outreach')" ondrop="handleDrop(event,'outreach')" ondragleave="handleDragLeave(event)">
+        <h3>Outreach Sent</h3>
+        <div class="col-count" id="count-outreach">0 leads</div>
+        <div id="col-outreach-cards"></div>
+        <div class="drop-hint">Drop here</div>
+      </div>
+      <div class="pipeline-col col-engaged"
+        ondragover="handleDragOver(event,'engaged')" ondrop="handleDrop(event,'engaged')" ondragleave="handleDragLeave(event)">
+        <h3>Engaged / Replied</h3>
+        <div class="col-count" id="count-engaged">0 leads</div>
+        <div id="col-engaged-cards"></div>
+        <div class="drop-hint">Drop here</div>
+      </div>
+      <div class="pipeline-col col-hot"
+        ondragover="handleDragOver(event,'hot')" ondrop="handleDrop(event,'hot')" ondragleave="handleDragLeave(event)">
+        <h3>🔥 Hot Lead</h3>
+        <div class="col-count" id="count-hot">0 leads</div>
+        <div id="col-hot-cards"></div>
+        <div class="drop-hint">Drop here</div>
+      </div>
+      <div class="pipeline-col col-closed"
+        ondragover="handleDragOver(event,'closed')" ondrop="handleDrop(event,'closed')" ondragleave="handleDragLeave(event)">
+        <h3>✅ Sold</h3>
+        <div class="col-count" id="count-closed">0 leads</div>
+        <div id="col-closed-cards"></div>
+        <div class="drop-hint">Drop here</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ADD / MANAGE LEADS ============ -->
+  <div class="tab-content" id="tab-leads">
+    <div class="add-form">
+      <h3>Add New Lead</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Name / Handle</label>
+          <input type="text" id="leadName" placeholder="@johndoe or John Doe">
+        </div>
+        <div class="form-group">
+          <label>Email (optional)</label>
+          <input type="email" id="leadEmail" placeholder="john@example.com">
+        </div>
+        <div class="form-group">
+          <label>Channel</label>
+          <select id="leadChannel">
+            <option value="Twitter/X">Twitter / X</option>
+            <option value="Instagram">Instagram</option>
+            <option value="LinkedIn">LinkedIn</option>
+            <option value="Reddit">Reddit</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Email">Cold Email</option>
+            <option value="Gumroad">Gumroad Organic</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Audience Type</label>
+          <select id="leadAudience">
+            <option value="Side Hustler">Aspiring Side Hustler</option>
+            <option value="Freelancer">Freelancer / Creator</option>
+            <option value="Small Biz">Small Business Owner</option>
+            <option value="AI Enthusiast">AI / Tech Enthusiast</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Target Product</label>
+          <select id="leadProduct">
+            <option value="Mega Bundle ($59)">Mega Bundle ($59)</option>
+            <option value="3-Pack Bundle ($30)">3-Pack Bundle ($30)</option>
+            <option value="AI Side Hustle Bible ($19)">AI Side Hustle Bible ($19)</option>
+            <option value="Freelancer Starter Kit ($15)">Freelancer Starter Kit ($15)</option>
+            <option value="Passive Income Tracker ($15)">Passive Income Tracker ($15)</option>
+            <option value="Social Media Planner ($12)">Social Media Planner ($12)</option>
+            <option value="AI Prompt Pack ($9)">AI Prompt Pack ($9)</option>
+            <option value="Caption Templates ($9)">Caption Templates ($9)</option>
+            <option value="Undecided">Undecided</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Stage</label>
+          <select id="leadStage">
+            <option value="prospect">Prospect</option>
+            <option value="outreach">Outreach Sent</option>
+            <option value="engaged">Engaged / Replied</option>
+            <option value="hot">Hot Lead</option>
+            <option value="closed">Sold</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>Notes</label>
+          <input type="text" id="leadNotes" placeholder="Where you found them, context, etc.">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="addLead()">Add Lead</button>
+        <button class="btn btn-secondary" onclick="exportData()">Export CSV</button>
+        <button class="btn btn-secondary" onclick="importCSV()">Import CSV</button>
+        <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="handleImport(event)">
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Channel</th>
+            <th>Audience</th>
+            <th>Product</th>
+            <th>Stage</th>
+            <th>Date Added</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="leadsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ OUTREACH LOG ============ -->
+  <div class="tab-content" id="tab-outreach">
+    <div class="add-form">
+      <h3>Log Outreach Activity</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Lead</label>
+          <select id="outreachLead"></select>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="outreachType">
+            <option value="Email">Cold Email</option>
+            <option value="DM">DM</option>
+            <option value="Comment">Comment/Reply</option>
+            <option value="Post">Content Post</option>
+            <option value="Follow-up">Follow-up</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Result</label>
+          <select id="outreachResult">
+            <option value="Pending">Pending</option>
+            <option value="Replied">Replied</option>
+            <option value="Sold">Sold!</option>
+            <option value="Ghosted">Ghosted</option>
+            <option value="Not Interested">Not Interested</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <input type="text" id="outreachNotes" placeholder="What you sent, their response, etc.">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="logOutreach()">Log Activity</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Lead</th>
+            <th>Type</th>
+            <th>Result</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="outreachTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ REVENUE GOALS ============ -->
+  <div class="tab-content" id="tab-goals">
+    <div class="goal-section">
+      <h3>Revenue Targets</h3>
+
+      <div style="margin-bottom: 24px;">
+        <div class="goal-row">
+          <span class="goal-label">Week 1 Goal</span>
+          <span class="goal-numbers"><span id="week1rev">$0</span> / $50</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar purple" id="week1bar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <div class="goal-row">
+          <span class="goal-label">Month 1 Goal</span>
+          <span class="goal-numbers"><span id="month1rev">$0</span> / $500</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar gold" id="month1bar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <div class="goal-row">
+          <span class="goal-label">Month 3 Goal</span>
+          <span class="goal-numbers"><span id="month3rev">$0</span> / $2,000</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar green" id="month3bar" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="goal-section">
+      <h3>Sales Math</h3>
+      <div class="products-grid">
+        <div class="product-card">
+          <h4>Scenario: Conservative</h4>
+          <p style="color:#888; font-size:0.85rem; margin-top:8px;">3 sales/week avg @ $20 AOV</p>
+          <div class="product-stats">
+            <div class="ps"><div class="psn">$60</div><div class="psl">Weekly</div></div>
+            <div class="ps"><div class="psn">$240</div><div class="psl">Monthly</div></div>
+          </div>
+        </div>
+        <div class="product-card">
+          <h4>Scenario: Moderate</h4>
+          <p style="color:#888; font-size:0.85rem; margin-top:8px;">8 sales/week avg @ $25 AOV</p>
+          <div class="product-stats">
+            <div class="ps"><div class="psn">$200</div><div class="psl">Weekly</div></div>
+            <div class="ps"><div class="psn">$800</div><div class="psl">Monthly</div></div>
+          </div>
+        </div>
+        <div class="product-card">
+          <h4>Scenario: Aggressive</h4>
+          <p style="color:#888; font-size:0.85rem; margin-top:8px;">20 sales/week avg @ $30 AOV</p>
+          <div class="product-stats">
+            <div class="ps"><div class="psn">$600</div><div class="psl">Weekly</div></div>
+            <div class="ps"><div class="psn">$2,400</div><div class="psl">Monthly</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="goal-section">
+      <h3>Outreach → Revenue Calculator</h3>
+      <div class="form-grid" style="max-width:600px;">
+        <div class="form-group">
+          <label>DMs / Emails per day</label>
+          <input type="number" id="calcOutreach" value="8" min="1" oninput="calculateRevenue()">
+        </div>
+        <div class="form-group">
+          <label>Reply rate (%)</label>
+          <input type="number" id="calcReplyRate" value="15" min="1" max="100" oninput="calculateRevenue()">
+        </div>
+        <div class="form-group">
+          <label>Close rate on replies (%)</label>
+          <input type="number" id="calcCloseRate" value="10" min="1" max="100" oninput="calculateRevenue()">
+        </div>
+        <div class="form-group">
+          <label>Avg order value ($)</label>
+          <input type="number" id="calcAOV" value="25" min="1" oninput="calculateRevenue()">
+        </div>
+      </div>
+      <div style="margin-top:16px; padding:16px; background:#0a0a1a; border-radius:8px; display:grid; grid-template-columns:repeat(4,1fr); gap:16px; text-align:center;">
+        <div><div style="font-size:1.2rem; font-weight:800; color:#a78bfa;" id="calcWeeklyOutreach">56</div><div style="font-size:0.75rem; color:#666;">Weekly Outreach</div></div>
+        <div><div style="font-size:1.2rem; font-weight:800; color:#f59e0b;" id="calcWeeklyReplies">8</div><div style="font-size:0.75rem; color:#666;">Weekly Replies</div></div>
+        <div><div style="font-size:1.2rem; font-weight:800; color:#10b981;" id="calcWeeklySales">1</div><div style="font-size:0.75rem; color:#666;">Weekly Sales</div></div>
+        <div><div style="font-size:1.2rem; font-weight:800; color:#fff;" id="calcMonthlyRev">$100</div><div style="font-size:0.75rem; color:#666;">Monthly Revenue</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PRODUCTS ============ -->
+  <div class="tab-content" id="tab-products">
+    <div class="products-grid">
+      <div class="product-card" style="border-color:#f59e0b44;">
+        <h4>Ultimate AI Money Machine Bundle</h4>
+        <div class="price">$59</div>
+        <a class="product-link" href="https://maximus315.gumroad.com" target="_blank">maximus315.gumroad.com</a>
+        <div class="product-stats">
+          <div class="ps"><div class="psn" id="prod-mega-sales">0</div><div class="psl">Sales</div></div>
+          <div class="ps"><div class="psn" id="prod-mega-rev">$0</div><div class="psl">Revenue</div></div>
+        </div>
+      </div>
+      <div class="product-card">
+        <h4>3-Pack Bundle</h4>
+        <div class="price">$30</div>
+        <a class="product-link" href="https://maximus315.gumroad.com" target="_blank">maximus315.gumroad.com</a>
+        <div class="product-stats">
+          <div class="ps"><div class="psn" id="prod-3pack-sales">0</div><div class="psl">Sales</div></div>
+          <div class="ps"><div class="psn" id="prod-3pack-rev">$0</div><div class="psl">Revenue</div></div>
+        </div>
+      </div>
+      <div class="product-card">
+        <h4>AI Side Hustle Bible</h4>
+        <div class="price">$19</div>
+        <div class="product-stats">
+          <div class="ps"><div class="psn" id="prod-bible-sales">0</div><div class="psl">Sales</div></div>
+          <div class="ps"><div class="psn" id="prod-bible-rev">$0</div><div class="psl">Revenue</div></div>
+        </div>
+      </div>
+      <div class="product-card">
+        <h4>Freelancer Starter Kit</h4>
+        <div class="price">$15</div>
+        <div class="product-stats">
+          <div class="ps"><div class="psn" id="prod-fsk-sales">0</div><div class="psl">Sales</div></div>
+          <div class="ps"><div class="psn" id="prod-fsk-rev">$0</div><div class="psl">Revenue</div></div>
+        </div>
+      </div>
+      <div class="product-card">
+        <h4>Passive Income Tracker</h4>
+        <div class="price">$15</div>
+        <div class="product-stats">
+          <div class="ps"><div class="psn" id="prod-pit-sales">0</div><div class="psl">Sales</div></div>
+          <div class="ps"><div class="psn" id="prod-pit-rev">$0</div><div class="psl">Revenue</div></div>
+        </div>
+      </div>
+      <div class="product-card">
+        <h4>Social Media Planner</h4>
+        <div class="price">$12</div>
+        <div class="product-stats">
+          <div class="ps"><div class="psn" id="prod-smp-sales">0</div><div class="psl">Sales</div></div>
+          <div class="ps"><div class="psn" id="prod-smp-rev">$0</div><div class="psl">Revenue</div></div>
+        </div>
+      </div>
+      <div class="product-card">
+        <h4>AI Prompt Pack 150+</h4>
+        <div class="price">$9</div>
+        <div class="product-stats">
+          <div class="ps"><div class="psn" id="prod-pp-sales">0</div><div class="psl">Sales</div></div>
+          <div class="ps"><div class="psn" id="prod-pp-rev">$0</div><div class="psl">Revenue</div></div>
+        </div>
+      </div>
+      <div class="product-card">
+        <h4>Caption Templates 200+</h4>
+        <div class="price">$9</div>
+        <div class="product-stats">
+          <div class="ps"><div class="psn" id="prod-ct-sales">0</div><div class="psl">Sales</div></div>
+          <div class="ps"><div class="psn" id="prod-ct-rev">$0</div><div class="psl">Revenue</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ WEEKLY PLAN ============ -->
+  <div class="tab-content" id="tab-weekly">
+    <div style="margin-bottom:16px;">
+      <h3 style="color:#f59e0b;">Your 30-Min/Day Outreach Routine</h3>
+      <p style="color:#888; margin-top:4px;">Follow this daily to hit your revenue targets. Consistency > intensity.</p>
+    </div>
+    <div class="week-grid">
+      <div class="day-card">
+        <h4>Monday — Twitter Blitz</h4>
+        <ul>
+          <li>Reply to 10 tweets about AI, side hustles, or making money online</li>
+          <li>Send 5 DMs to engaged profiles (use DM Template 1)</li>
+          <li>Post 1 value tweet (AI tip or income stream idea)</li>
+          <li>Log all outreach in the pipeline tracker</li>
+        </ul>
+        <div class="time-est">~30 min</div>
+      </div>
+      <div class="day-card">
+        <h4>Tuesday — Instagram Outreach</h4>
+        <ul>
+          <li>Comment on 15 posts in #sidehustle #makemoneyonline</li>
+          <li>DM 5 content creators who posted about AI or business</li>
+          <li>Post 1 Reel or Story about your products</li>
+          <li>Follow up with any Monday replies</li>
+        </ul>
+        <div class="time-est">~30 min</div>
+      </div>
+      <div class="day-card">
+        <h4>Wednesday — Cold Email Day</h4>
+        <ul>
+          <li>Send 10 cold emails (use templates from outreach playbook)</li>
+          <li>Target: freelancers, small biz owners, creators</li>
+          <li>Find emails via LinkedIn profiles, websites, bios</li>
+          <li>Follow up on Tuesday DMs</li>
+        </ul>
+        <div class="time-est">~30 min</div>
+      </div>
+      <div class="day-card">
+        <h4>Thursday — LinkedIn + Reddit</h4>
+        <ul>
+          <li>Connect with 10 solopreneurs/freelancers on LinkedIn</li>
+          <li>Send 5 LinkedIn DMs (use professional template)</li>
+          <li>Answer 3 questions on r/sidehustle or r/Entrepreneur</li>
+          <li>Post 1 LinkedIn post about AI productivity</li>
+        </ul>
+        <div class="time-est">~30 min</div>
+      </div>
+      <div class="day-card">
+        <h4>Friday — Follow-Up Day</h4>
+        <ul>
+          <li>Follow up with EVERY lead who hasn't replied from this week</li>
+          <li>Move engaged leads to next pipeline stage</li>
+          <li>Send "Value Drop" email #2 to cold email prospects</li>
+          <li>Review pipeline: update stages, remove dead leads</li>
+        </ul>
+        <div class="time-est">~30 min</div>
+      </div>
+      <div class="day-card">
+        <h4>Weekend — Content + Review</h4>
+        <ul>
+          <li>Create 1-2 TikTok/Reels for next week</li>
+          <li>Write 3-5 tweets to schedule for next week</li>
+          <li>Review weekly stats: outreach sent, replies, sales</li>
+          <li>Plan next week's targets based on what worked</li>
+        </ul>
+        <div class="time-est">~1 hour total</div>
+      </div>
+    </div>
+
+    <div class="goal-section" style="margin-top:24px;">
+      <h3>Weekly KPI Targets</h3>
+      <div class="products-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+        <div class="product-card" style="text-align:center;">
+          <div style="font-size:2rem; font-weight:800; color:#a78bfa;">40+</div>
+          <div style="font-size:0.8rem; color:#888;">DMs & Emails Sent</div>
+        </div>
+        <div class="product-card" style="text-align:center;">
+          <div style="font-size:2rem; font-weight:800; color:#3b82f6;">50+</div>
+          <div style="font-size:0.8rem; color:#888;">Comments / Replies</div>
+        </div>
+        <div class="product-card" style="text-align:center;">
+          <div style="font-size:2rem; font-weight:800; color:#f59e0b;">6+</div>
+          <div style="font-size:0.8rem; color:#888;">Engaged Replies</div>
+        </div>
+        <div class="product-card" style="text-align:center;">
+          <div style="font-size:2rem; font-weight:800; color:#10b981;">3+</div>
+          <div style="font-size:0.8rem; color:#888;">Sales / Week</div>
+        </div>
+        <div class="product-card" style="text-align:center;">
+          <div style="font-size:2rem; font-weight:800; color:#fff;">5+</div>
+          <div style="font-size:0.8rem; color:#888;">Content Posts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toastMsg"></div>
+
+<!-- ============ CONTACT MODAL ============ -->
+<div class="modal-overlay" id="contactModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalName">—</h2>
+        <div class="modal-subtitle" id="modalRole">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Stage Bar -->
+      <div class="modal-stage-bar" id="modalStageBar"></div>
+
+      <!-- Contact Info Grid -->
+      <div class="contact-grid" id="modalContactGrid"></div>
+
+      <!-- Notes -->
+      <div class="modal-section">
+        <h4>Notes</h4>
+        <textarea class="modal-notes-area" id="modalNotes" placeholder="Add notes about this contact..."></textarea>
+      </div>
+
+      <!-- Outreach History Timeline -->
+      <div class="modal-section">
+        <h4>Activity History</h4>
+        <div id="modalTimeline"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveModalNotes()">Save Notes</button>
+        <button class="btn btn-danger" onclick="if(confirm('Remove this lead?')){deleteLead(currentModalLeadId);closeModal();}">Remove Lead</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ DATA STORE (in-memory) ============
+let leads = [
+  {id:1, name:"Liv Montgomery", email:"liv@socialintelagency.com", channel:"LinkedIn", audience:"Small Biz", product:"Social Media Planner ($12)", stage:"outreach", notes:"Senior SMM at Social Intelligence Agency, LA — content creation, video editing, influencer marketing", dateAdded:"3/14/2026", outreachCount:0},
+  {id:2, name:"Lauren Ellermeyer", email:"lauren@beyondfifteen.com", channel:"Email", audience:"Small Biz", product:"3-Pack Bundle ($30)", stage:"prospect", notes:"President at Beyond Fifteen Communications, Costa Mesa CA — PR, social media, event management", dateAdded:"3/14/2026", outreachCount:0},
+  {id:3, name:"Karen Seymour", email:"karen@karenjseymour.com", channel:"Email", audience:"Small Biz", product:"Social Media Planner ($12)", stage:"outreach", notes:"CEO at KJS Digital Marketing, Philadelphia — AI for marketing, content strategy, SEO copywriting", dateAdded:"3/14/2026", outreachCount:1},
+  {id:4, name:"Stanley Hailey", email:"s.hailey@northtexastopteam.com", channel:"Email", audience:"Small Biz", product:"Caption Templates ($9)", stage:"prospect", notes:"Owner/CMO at North Texas Top Team Realtors — marketing strategy, media buying", dateAdded:"3/14/2026", outreachCount:0},
+  {id:5, name:"Christopher Leomporra", email:"christopher@talksportsphilly.com", channel:"LinkedIn", audience:"Small Biz", product:"AI Prompt Pack ($9)", stage:"prospect", notes:"President at TalkSportsPhilly, NJ — social media marketing, SEO, lead generation", dateAdded:"3/14/2026", outreachCount:0},
+  {id:6, name:"Keri Jaehnig", email:"keri@ideagirlmedia.com", channel:"Email", audience:"Small Biz", product:"3-Pack Bundle ($30)", stage:"outreach", notes:"Award-winning SMM & Trainer at Idea Girl Media, OH — social strategy, Facebook marketing, e-commerce", dateAdded:"3/14/2026", outreachCount:1},
+  {id:7, name:"Anna Sullivan", email:"anna@thecreativeexchange.co", channel:"Email", audience:"Small Biz", product:"Social Media Planner ($12)", stage:"outreach", notes:"Agency Founder at The Creative Exchange, NC — brand strategy, TikTok marketing, content marketing", dateAdded:"3/14/2026", outreachCount:1},
+  {id:8, name:"Barbara Tipton", email:"barbara@tiptonintl.com", channel:"LinkedIn", audience:"Small Biz", product:"AI Prompt Pack ($9)", stage:"prospect", notes:"CEO/CTO at Tipton International Search, AZ — talent acquisition, social networking", dateAdded:"3/14/2026", outreachCount:0},
+  {id:9, name:"Heather Ramsey", email:"heather@realdigitalmarketing.co", channel:"Email", audience:"Small Biz", product:"Mega Bundle ($59)", stage:"outreach", notes:"CEO at Real Digital Marketing, TN — web design, social media, graphic design, content creation", dateAdded:"3/14/2026", outreachCount:1},
+  {id:10, name:"Sarah Curcio", email:"sarah@sarahsocialstrategy.com", channel:"Email", audience:"Small Biz", product:"3-Pack Bundle ($30)", stage:"outreach", notes:"CEO/Social Media Strategist at Sarah's Social Strategy, NJ — blogging, email marketing, SEO, copywriting", dateAdded:"3/14/2026", outreachCount:1},
+  {id:16, name:"Sharick Mirza", email:"smirza@assuretyconsulting.com", channel:"Email", audience:"Small Biz", product:"AI Prompt Pack ($12)", stage:"prospect", notes:"CEO - Digital Marketing at Assurety Consulting, Leesburg VA", dateAdded:"3/14/2026", outreachCount:0},
+  {id:17, name:"Deepak Agrawal", email:"deepak@omkatech.com", channel:"Email", audience:"Small Biz", product:"Mega Bundle ($59)", stage:"prospect", notes:"Founder & CEO at Omka Tech — branding, app dev, digital marketing, Mesquite TX", dateAdded:"3/14/2026", outreachCount:0},
+  {id:18, name:"Dee Ray", email:"dee@filtersfast.com", channel:"Email", audience:"Small Biz", product:"3-Pack Bundle ($29)", stage:"prospect", notes:"CMO / Director of Digital Marketing at FiltersFast, Windermere FL", dateAdded:"3/14/2026", outreachCount:0},
+  {id:19, name:"Julie Mantis", email:"julie.mantis@chameleoncollective.com", channel:"LinkedIn", audience:"Small Biz", product:"AI Prompt Pack ($12)", stage:"prospect", notes:"Partner - Digital Marketing & Brand Strategy at Chameleon Collective, Asheville NC", dateAdded:"3/14/2026", outreachCount:0},
+  {id:20, name:"Dan Ferguson", email:"dferguson@groovejones.com", channel:"Email", audience:"Small Biz", product:"AI Side Hustle Bible ($19)", stage:"prospect", notes:"Co-Founder at Groove Jones — VR/AI/digital marketing consulting, Dallas TX", dateAdded:"3/14/2026", outreachCount:0},
+  {id:21, name:"Kyrin Hall", email:"kyrin@digitalshortcutz.agency", channel:"Email", audience:"Small Biz", product:"3-Pack Bundle ($29)", stage:"prospect", notes:"Founder + CMO at Digital Shortcutz Agency, Naples FL — AI automation, health & wellness marketing", dateAdded:"3/14/2026", outreachCount:0},
+  {id:22, name:"Ashley Dudarenok", email:"ashley@alarice.com.hk", channel:"LinkedIn", audience:"Small Biz", product:"Caption Templates ($9)", stage:"prospect", notes:"Founder of Alarice — China digital marketing agency, social commerce, Largo FL", dateAdded:"3/14/2026", outreachCount:0},
+  {id:23, name:"Tabasum Lutfi", email:"tabasum@trivision.com", channel:"Email", audience:"Small Biz", product:"AI Prompt Pack ($12)", stage:"prospect", notes:"COO / Head of Digital Marketing at TriVision, Washington DC", dateAdded:"3/14/2026", outreachCount:0},
+  {id:24, name:"Claire Rollins", email:"clairerollins@jomboymedia.com", channel:"Email", audience:"Content Creator", product:"Caption Templates ($9)", stage:"prospect", notes:"Content Creator & Social Media Manager at Jomboy Media, Ocean City MD", dateAdded:"3/14/2026", outreachCount:0},
+  {id:25, name:"Valorie Luther", email:"vluther@creative-conceptsllc.com", channel:"Email", audience:"Small Biz", product:"Mega Bundle ($59)", stage:"prospect", notes:"Founder & Chief Strategist - Digital Marketing at Creative Concepts, Somerville MA", dateAdded:"3/14/2026", outreachCount:0},
+  {id:26, name:"Michelle Khare", email:"michelle@youtube.com", channel:"Email", audience:"Content Creator", product:"Caption Templates ($9)", stage:"prospect", notes:"Content Creator & CEO — YouTube, film production, Shreveport LA", dateAdded:"3/14/2026", outreachCount:0},
+  {id:27, name:"Greg Finn", email:"finn@cypressnorth.com", channel:"Email", audience:"Small Biz", product:"AI Prompt Pack ($12)", stage:"prospect", notes:"Digital Marketer / Partner at Cypress North, Pittsford NY — SEO, PPC, e-commerce", dateAdded:"3/14/2026", outreachCount:0},
+  {id:28, name:"Avi Gandhi", email:"avi@creatorlogic.com", channel:"LinkedIn", audience:"Content Creator", product:"AI Side Hustle Bible ($19)", stage:"prospect", notes:"Founder + Content Creator at Creator Logic, LA — creator economy, newsletters", dateAdded:"3/14/2026", outreachCount:0},
+  {id:29, name:"Chris Bannon", email:"chris@buzzhoney.com", channel:"Email", audience:"Small Biz", product:"3-Pack Bundle ($29)", stage:"prospect", notes:"President / Marketing Strategist at BuzzHoney, Pittsburgh PA", dateAdded:"3/14/2026", outreachCount:0},
+  {id:30, name:"Michaela Guzy", email:"michaela@ohthepeopleyoumeet.com", channel:"Email", audience:"Content Creator", product:"Caption Templates ($9)", stage:"prospect", notes:"Founder + Chief Content Creator at OhThePeopleYouMeet, NYC — travel, digital", dateAdded:"3/14/2026", outreachCount:0},
+  {id:31, name:"Robby Sabo", email:"robby.sabo@jetsxfactor.com", channel:"Email", audience:"Content Creator", product:"AI Prompt Pack ($12)", stage:"prospect", notes:"Founder / Content Creator at Jets X Factor, NJ — sports content, SEO", dateAdded:"3/14/2026", outreachCount:0},
+  {id:32, name:"Sue Canfield", email:"sue@ausoma.com", channel:"Email", audience:"Small Biz", product:"Social Media Planner ($9)", stage:"prospect", notes:"Chief Social Media Officer at AUSOMA, San Tan Valley AZ — blogging, SMM", dateAdded:"3/14/2026", outreachCount:0},
+  {id:33, name:"Jonathan Donley", email:"jonathan@field1post.com", channel:"Email", audience:"Content Creator", product:"AI Prompt Pack ($12)", stage:"prospect", notes:"Digital Marketing Content Creator & CEO at Field 1 Post, Fort Worth TX", dateAdded:"3/14/2026", outreachCount:0},
+  {id:34, name:"Margee Moore", email:"margee@bigorange.marketing", channel:"Email", audience:"Small Biz", product:"3-Pack Bundle ($29)", stage:"prospect", notes:"CEO + Digital Marketing Strategy at BigOrange Marketing, Cincinnati OH", dateAdded:"3/14/2026", outreachCount:0},
+  {id:35, name:"Cynthia Colmenares", email:"cynthia@jackfrostdesign.com", channel:"Email", audience:"Small Biz", product:"AI Prompt Pack ($12)", stage:"prospect", notes:"CEO - AI Automation & Digital Marketing at Jack Frost Design, San Ramon CA", dateAdded:"3/14/2026", outreachCount:0},
+  {id:36, name:"Jennie Lyon", email:"jennie@jennielyon.com", channel:"Email", audience:"Small Biz", product:"Mega Bundle ($59)", stage:"prospect", notes:"Founder + CEO at Jennie Lyon Digital Marketing, Banner Elk NC — fractional CMO, social", dateAdded:"3/14/2026", outreachCount:0},
+  {id:37, name:"Nick Bomleny", email:"nick@asponte.com", channel:"Email", audience:"Small Biz", product:"AI Prompt Pack ($12)", stage:"prospect", notes:"Chief Digital Marketing Officer at Asponte Technology, Winter Garden FL", dateAdded:"3/14/2026", outreachCount:0},
+  {id:38, name:"David Black", email:"dave.black@vividsites.com", channel:"Email", audience:"Small Biz", product:"3-Pack Bundle ($29)", stage:"prospect", notes:"CEO - Digital Marketing Strategy & UX at VividSites, Cleveland TN", dateAdded:"3/14/2026", outreachCount:0},
+  {id:39, name:"Maria Bailey", email:"maria@successcityonline.com", channel:"Email", audience:"Small Biz", product:"Caption Templates ($9)", stage:"prospect", notes:"CEO at Success City Online, Henderson NV — web design, social media, blogging", dateAdded:"3/14/2026", outreachCount:0},
+  {id:40, name:"Andrea Romero", email:"andrea@sakuramarketingfirm.com", channel:"Email", audience:"Small Biz", product:"Mega Bundle ($59)", stage:"prospect", notes:"CEO - Digital Marketing & PR at Sakura Marketing Firm, Los Angeles CA", dateAdded:"3/14/2026", outreachCount:0}
+];
+let outreachLog = [
+  {id:11, leadId:3, leadName:"Karen Seymour", type:"Email", result:"Pending", notes:"Personalized cold email — pitched Social Media Planner for KJS Digital", date:"3/14/2026"},
+  {id:12, leadId:6, leadName:"Keri Jaehnig", type:"Email", result:"Pending", notes:"Personalized cold email — pitched AI tools for Idea Girl Media training packages", date:"3/14/2026"},
+  {id:13, leadId:7, leadName:"Anna Sullivan", type:"Email", result:"Pending", notes:"Personalized cold email — pitched content planning tool for The Creative Exchange", date:"3/14/2026"},
+  {id:14, leadId:9, leadName:"Heather Ramsey", type:"Email", result:"Pending", notes:"Personalized cold email — pitched full toolkit for Real Digital Marketing", date:"3/14/2026"},
+  {id:15, leadId:10, leadName:"Sarah Curcio", type:"Email", result:"Pending", notes:"Personalized cold email — pitched AI-powered content tools for Sarah's Social Strategy", date:"3/14/2026"}
+];
+let nextId = 41;
+
+// ============ PARSE LEAD NOTES ============
+function parseLead(lead) {
+  const notes = lead.notes || '';
+  let role = '', business = '', location = '', specialties = '';
+  // Pattern: "Role at Company, Location — specialties"
+  const m = notes.match(/^(.+?)\s+at\s+(.+?)(?:,\s*([A-Za-z\s.]+(?:\s*[A-Z]{2})?))?(?:\s*[—–-]\s*(.+))?$/);
+  if (m) {
+    role = m[1]?.trim() || '';
+    business = m[2]?.trim() || '';
+    location = m[3]?.trim() || '';
+    specialties = m[4]?.trim() || '';
+    // If location got merged into business, try to split
+    if (!location && business.includes(',')) {
+      const parts = business.split(',');
+      business = parts[0].trim();
+      location = parts.slice(1).join(',').trim();
+    }
+  } else {
+    // Fallback: just use notes as-is
+    specialties = notes;
+  }
+  return { role, business, location, specialties };
+}
+
+let currentModalLeadId = null;
+
+// ============ MODAL FUNCTIONS ============
+function openModal(leadId) {
+  const lead = leads.find(l => l.id === leadId);
+  if (!lead) return;
+  currentModalLeadId = leadId;
+  const info = parseLead(lead);
+
+  document.getElementById('modalName').textContent = lead.name;
+  document.getElementById('modalRole').textContent = info.role ? `${info.role}${info.business ? ' at ' + info.business : ''}` : (info.business || lead.audience);
+
+  // Stage bar
+  const stages = [
+    { key: 'prospect', label: 'Prospect' },
+    { key: 'outreach', label: 'Outreach' },
+    { key: 'engaged', label: 'Engaged' },
+    { key: 'hot', label: 'Hot Lead' },
+    { key: 'closed', label: 'Sold' }
+  ];
+  document.getElementById('modalStageBar').innerHTML = stages.map(s =>
+    `<button class="modal-stage-btn ${lead.stage === s.key ? 'active-' + s.key : ''}" onclick="moveLead(${lead.id},'${s.key}');openModal(${lead.id})">${s.label}</button>`
+  ).join('');
+
+  // Contact grid
+  let gridHTML = '';
+  gridHTML += `<div class="contact-item"><div class="ci-label">Email</div><div class="ci-value">${lead.email ? `<a href="mailto:${lead.email}">${lead.email}</a>` : '—'}</div></div>`;
+  gridHTML += `<div class="contact-item"><div class="ci-label">Channel</div><div class="ci-value">${lead.channel}</div></div>`;
+  gridHTML += `<div class="contact-item"><div class="ci-label">Business</div><div class="ci-value">${info.business || '—'}</div></div>`;
+  gridHTML += `<div class="contact-item"><div class="ci-label">Location</div><div class="ci-value">${info.location || '—'}</div></div>`;
+  gridHTML += `<div class="contact-item"><div class="ci-label">Audience Type</div><div class="ci-value">${lead.audience}</div></div>`;
+  gridHTML += `<div class="contact-item"><div class="ci-label">Target Product</div><div class="ci-value" style="color:#f59e0b;">${lead.product}</div></div>`;
+  if (info.specialties) {
+    gridHTML += `<div class="contact-item full-width"><div class="ci-label">Specialties / What They Do</div><div class="ci-value">${info.specialties}</div></div>`;
+  }
+  if (info.role) {
+    gridHTML += `<div class="contact-item full-width"><div class="ci-label">Role / Title</div><div class="ci-value">${info.role}</div></div>`;
+  }
+  gridHTML += `<div class="contact-item"><div class="ci-label">Date Added</div><div class="ci-value">${lead.dateAdded}</div></div>`;
+  gridHTML += `<div class="contact-item"><div class="ci-label">Outreach Count</div><div class="ci-value">${lead.outreachCount}</div></div>`;
+  // Links
+  const domain = lead.email ? lead.email.split('@')[1] : '';
+  if (domain && !['gmail.com','yahoo.com','hotmail.com','outlook.com','youtube.com'].includes(domain)) {
+    gridHTML += `<div class="contact-item full-width"><div class="ci-label">Website</div><div class="ci-value"><a href="https://${domain}" target="_blank">${domain}</a></div></div>`;
+  }
+  document.getElementById('modalContactGrid').innerHTML = gridHTML;
+
+  // Notes
+  document.getElementById('modalNotes').value = lead.notes || '';
+
+  // Timeline
+  const history = outreachLog.filter(o => o.leadId === leadId);
+  if (history.length === 0) {
+    document.getElementById('modalTimeline').innerHTML = '<div class="timeline-empty">No outreach activity yet for this contact.</div>';
+  } else {
+    document.getElementById('modalTimeline').innerHTML = '<div class="timeline">' +
+      history.slice().reverse().map(o => {
+        const typeClass = o.result === 'Sold!' ? 'type-sold' : o.result === 'Ghosted' ? 'type-ghosted' : o.type === 'Email' ? 'type-email' : 'type-dm';
+        return `<div class="timeline-item ${typeClass}">
+          <div class="tl-date">${o.date}</div>
+          <div class="tl-action">${o.type} — <span class="badge badge-${o.result === 'Sold!' ? 'sold' : o.result === 'Replied' ? 'replied' : o.result === 'Ghosted' ? 'ghosted' : 'pending'}">${o.result}</span></div>
+          ${o.notes ? `<div class="tl-notes">${o.notes}</div>` : ''}
+        </div>`;
+      }).join('') + '</div>';
+  }
+
+  document.getElementById('contactModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('contactModal').classList.remove('open');
+  currentModalLeadId = null;
+}
+
+function saveModalNotes() {
+  if (!currentModalLeadId) return;
+  const lead = leads.find(l => l.id === currentModalLeadId);
+  if (lead) {
+    lead.notes = document.getElementById('modalNotes').value;
+    refreshAll();
+  }
+}
+
+// Close modal on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ============ TAB NAVIGATION ============
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'outreach') populateOutreachLeadDropdown();
+  });
+});
+
+// ============ DATE ============
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+// ============ ADD LEAD ============
+function addLead() {
+  const name = document.getElementById('leadName').value.trim();
+  if (!name) { alert('Please enter a name or handle.'); return; }
+
+  const lead = {
+    id: nextId++,
+    name: name,
+    email: document.getElementById('leadEmail').value.trim(),
+    channel: document.getElementById('leadChannel').value,
+    audience: document.getElementById('leadAudience').value,
+    product: document.getElementById('leadProduct').value,
+    stage: document.getElementById('leadStage').value,
+    notes: document.getElementById('leadNotes').value.trim(),
+    dateAdded: new Date().toLocaleDateString(),
+    outreachCount: 0
+  };
+
+  leads.push(lead);
+  document.getElementById('leadName').value = '';
+  document.getElementById('leadEmail').value = '';
+  document.getElementById('leadNotes').value = '';
+  refreshAll();
+}
+
+// ============ LOG OUTREACH ============
+function logOutreach() {
+  const leadId = parseInt(document.getElementById('outreachLead').value);
+  if (!leadId) { alert('Please select a lead.'); return; }
+
+  const entry = {
+    id: nextId++,
+    leadId: leadId,
+    leadName: leads.find(l => l.id === leadId)?.name || 'Unknown',
+    type: document.getElementById('outreachType').value,
+    result: document.getElementById('outreachResult').value,
+    notes: document.getElementById('outreachNotes').value.trim(),
+    date: new Date().toLocaleDateString()
+  };
+
+  outreachLog.push(entry);
+  document.getElementById('outreachNotes').value = '';
+
+  // Auto-update lead stage based on result
+  const lead = leads.find(l => l.id === leadId);
+  if (lead) {
+    lead.outreachCount++;
+    if (entry.result === 'Replied' && ['prospect', 'outreach'].includes(lead.stage)) lead.stage = 'engaged';
+    if (entry.result === 'Sold!') lead.stage = 'closed';
+    if (lead.stage === 'prospect') lead.stage = 'outreach';
+  }
+
+  refreshAll();
+}
+
+// ============ MOVE LEAD STAGE ============
+function moveLead(id, newStage) {
+  const lead = leads.find(l => l.id === id);
+  if (lead) { lead.stage = newStage; refreshAll(); }
+}
+
+// ============ DELETE LEAD ============
+function deleteLead(id) {
+  leads = leads.filter(l => l.id !== id);
+  outreachLog = outreachLog.filter(o => o.leadId !== id);
+  refreshAll();
+}
+
+// ============ REFRESH UI ============
+function refreshAll() {
+  refreshStats();
+  refreshPipeline();
+  refreshLeadsTable();
+  refreshOutreachTable();
+  refreshGoals();
+  calculateRevenue();
+}
+
+function refreshStats() {
+  const totalLeads = leads.length;
+  const outreachSent = outreachLog.length;
+  const replies = outreachLog.filter(o => ['Replied', 'Sold!'].includes(o.result)).length;
+  const sales = leads.filter(l => l.stage === 'closed').length;
+  const revenue = calculateTotalRevenue();
+  const conversion = totalLeads > 0 ? Math.round((sales / totalLeads) * 100) : 0;
+
+  document.getElementById('totalLeads').textContent = totalLeads;
+  document.getElementById('outreachSent').textContent = outreachSent;
+  document.getElementById('repliesReceived').textContent = replies;
+  document.getElementById('totalSales').textContent = sales;
+  document.getElementById('totalRevenue').textContent = '$' + revenue;
+  document.getElementById('conversionRate').textContent = conversion + '%';
+}
+
+function calculateTotalRevenue() {
+  let total = 0;
+  leads.filter(l => l.stage === 'closed').forEach(l => {
+    const match = l.product.match(/\$(\d+)/);
+    if (match) total += parseInt(match[1]);
+  });
+  return total;
+}
+
+function refreshPipeline() {
+  const stages = ['prospect', 'outreach', 'engaged', 'hot', 'closed'];
+  stages.forEach(stage => {
+    const container = document.getElementById('col-' + stage + '-cards');
+    const stageLeads = leads.filter(l => l.stage === stage);
+    document.getElementById('count-' + stage).textContent = stageLeads.length + ' lead' + (stageLeads.length !== 1 ? 's' : '');
+
+    if (stageLeads.length === 0) {
+      container.innerHTML = '<div style="color:#444; font-size:0.8rem; text-align:center; padding:20px;">No leads yet</div>';
+      return;
+    }
+
+    container.innerHTML = stageLeads.map(lead => {
+      const info = parseLead(lead);
+      const outreachCount = outreachLog.filter(o => o.leadId === lead.id).length;
+
+      return `<div class="deal-card" onclick="openModal(${lead.id})">
+        <div class="deal-name">${lead.name}</div>
+        ${info.business ? `<div class="deal-biz">${info.business}</div>` : ''}
+        ${info.role ? `<div class="deal-role">${info.role}</div>` : `<div class="deal-role">${lead.audience}</div>`}
+        ${info.location ? `<div class="deal-location">${info.location}</div>` : ''}
+        <div class="deal-product">${lead.product}</div>
+        <div class="deal-value">${lead.product.match(/\$\d+/) ? lead.product.match(/\$\d+/)[0] : ''}${outreachCount > 0 ? ` · ${outreachCount} touch${outreachCount > 1 ? 'es' : ''}` : ''}</div>
+      </div>`;
+    }).join('');
+  });
+}
+
+function refreshLeadsTable() {
+  const tbody = document.getElementById('leadsTableBody');
+  if (leads.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#555;padding:40px;">No leads yet. Add your first lead above!</td></tr>';
+    return;
+  }
+  tbody.innerHTML = leads.map(l => `<tr>
+    <td style="color:#fff;font-weight:600;">${l.name}</td>
+    <td>${l.email || '-'}</td>
+    <td><span class="badge badge-${l.channel === 'Email' ? 'email' : l.channel === 'Reddit' ? 'reddit' : 'dm'}">${l.channel}</span></td>
+    <td>${l.audience}</td>
+    <td style="color:#a78bfa;">${l.product}</td>
+    <td><span class="badge badge-${l.stage === 'closed' ? 'sold' : l.stage === 'engaged' || l.stage === 'hot' ? 'replied' : 'pending'}">${l.stage}</span></td>
+    <td>${l.dateAdded}</td>
+    <td><button class="btn btn-danger" onclick="deleteLead(${l.id})">Remove</button></td>
+  </tr>`).join('');
+}
+
+function refreshOutreachTable() {
+  const tbody = document.getElementById('outreachTableBody');
+  if (outreachLog.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#555;padding:40px;">No outreach logged yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = outreachLog.slice().reverse().map(o => `<tr>
+    <td>${o.date}</td>
+    <td style="color:#fff;">${o.leadName}</td>
+    <td><span class="badge badge-${o.type === 'Email' ? 'email' : 'dm'}">${o.type}</span></td>
+    <td><span class="badge badge-${o.result === 'Sold!' ? 'sold' : o.result === 'Replied' ? 'replied' : o.result === 'Ghosted' ? 'ghosted' : 'pending'}">${o.result}</span></td>
+    <td>${o.notes}</td>
+  </tr>`).join('');
+}
+
+function refreshGoals() {
+  const rev = calculateTotalRevenue();
+  updateBar('week1', rev, 50);
+  updateBar('month1', rev, 500);
+  updateBar('month3', rev, 2000);
+}
+
+function updateBar(prefix, current, target) {
+  const pct = Math.min(100, Math.round((current / target) * 100));
+  document.getElementById(prefix + 'rev').textContent = '$' + current;
+  document.getElementById(prefix + 'bar').style.width = pct + '%';
+  document.getElementById(prefix + 'bar').textContent = pct > 8 ? pct + '%' : '';
+}
+
+function populateOutreachLeadDropdown() {
+  const select = document.getElementById('outreachLead');
+  select.innerHTML = '<option value="">-- Select a lead --</option>' +
+    leads.map(l => `<option value="${l.id}">${l.name} (${l.channel})</option>`).join('');
+}
+
+// ============ REVENUE CALCULATOR ============
+function calculateRevenue() {
+  const outreach = parseInt(document.getElementById('calcOutreach')?.value) || 8;
+  const replyRate = parseInt(document.getElementById('calcReplyRate')?.value) || 15;
+  const closeRate = parseInt(document.getElementById('calcCloseRate')?.value) || 10;
+  const aov = parseInt(document.getElementById('calcAOV')?.value) || 25;
+
+  const weeklyOutreach = outreach * 7;
+  const weeklyReplies = Math.round(weeklyOutreach * replyRate / 100);
+  const weeklySales = Math.max(1, Math.round(weeklyReplies * closeRate / 100));
+  const monthlyRev = weeklySales * aov * 4;
+
+  const el = (id) => document.getElementById(id);
+  if (el('calcWeeklyOutreach')) el('calcWeeklyOutreach').textContent = weeklyOutreach;
+  if (el('calcWeeklyReplies')) el('calcWeeklyReplies').textContent = weeklyReplies;
+  if (el('calcWeeklySales')) el('calcWeeklySales').textContent = weeklySales;
+  if (el('calcMonthlyRev')) el('calcMonthlyRev').textContent = '$' + monthlyRev.toLocaleString();
+}
+
+// ============ EXPORT CSV ============
+function exportData() {
+  if (leads.length === 0) { alert('No leads to export yet.'); return; }
+  const headers = ['Name', 'Email', 'Channel', 'Audience', 'Product', 'Stage', 'Date Added', 'Notes'];
+  const rows = leads.map(l => [l.name, l.email, l.channel, l.audience, l.product, l.stage, l.dateAdded, l.notes].map(v => `"${(v || '').replace(/"/g, '""')}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'pipeline-leads-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function importCSV() { document.getElementById('csvInput').click(); }
+function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return;
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+      if (!cols || cols.length < 6) continue;
+      const clean = cols.map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+      leads.push({
+        id: nextId++,
+        name: clean[0], email: clean[1] || '', channel: clean[2] || 'Other',
+        audience: clean[3] || 'Unknown', product: clean[4] || 'Undecided',
+        stage: clean[5] || 'prospect', dateAdded: clean[6] || new Date().toLocaleDateString(),
+        notes: clean[7] || '', outreachCount: 0
+      });
+    }
+    refreshAll();
+    alert('Imported ' + (lines.length - 1) + ' leads!');
+  };
+  reader.readAsText(file);
+}
+
+// ============ TOAST ============
+function showToast(msg) {
+  const t = document.getElementById('toastMsg');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ============ PIPELINE FILTERS ============
+function getFilteredLeads() {
+  const search = (document.getElementById('pipelineSearch')?.value || '').toLowerCase();
+  const channel = document.getElementById('filterChannel')?.value || '';
+  const product = document.getElementById('filterProduct')?.value || '';
+  const audience = document.getElementById('filterAudience')?.value || '';
+  return leads.filter(l => {
+    if (channel && l.channel !== channel) return false;
+    if (product && !l.product.includes(product)) return false;
+    if (audience && l.audience !== audience) return false;
+    if (search) {
+      const haystack = [l.name, l.email, l.notes, l.channel, l.audience, l.product].join(' ').toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  });
+}
+
+function clearPipelineFilters() {
+  document.getElementById('pipelineSearch').value = '';
+  document.getElementById('filterChannel').value = '';
+  document.getElementById('filterProduct').value = '';
+  document.getElementById('filterAudience').value = '';
+  document.getElementById('filterActiveBadge').style.display = 'none';
+  refreshPipeline();
+}
+
+// ============ DRAG AND DROP ============
+let draggingLeadId = null;
+
+function handleDragOver(e, stage) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  // Only remove if truly leaving the column (not just entering a child)
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+}
+
+function handleDrop(e, stage) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const id = parseInt(e.dataTransfer.getData('leadId'));
+  if (id && !isNaN(id)) {
+    const lead = leads.find(l => l.id === id);
+    if (lead && lead.stage !== stage) {
+      lead.stage = stage;
+      refreshAll();
+      showToast(`${lead.name} moved to ${stage.charAt(0).toUpperCase() + stage.slice(1)}`);
+    }
+  }
+}
+
+// ============ TODAY'S PLAYBOOK ============
+const DAY_PLANS = {
+  0: { // Sunday
+    label: 'Sunday — Rest & Content Prep',
+    emoji: '🌿',
+    tasks: [
+      { id: 'sun1', text: 'Plan next week\'s outreach targets (who to reach on Mon/Tue)', meta: 'Strategy', prompt: 'Based on my pipeline, suggest 10 high-priority leads I should focus outreach on next week and why.' },
+      { id: 'sun2', text: 'Create 2 TikTok/Reels scripts for next week', meta: 'Content', prompt: 'Write 2 short TikTok/Reels scripts (30-60 sec) showcasing AI tools for freelancers and content creators. Make them engaging and include a soft CTA to my Gumroad store.' },
+      { id: 'sun3', text: 'Write 5 tweets to schedule for Monday–Friday', meta: 'Content', prompt: 'Write 5 tweets about AI side hustles, productivity tips, or making money online. Mix value + soft sells. Keep them punchy and under 280 characters each.' },
+      { id: 'sun4', text: 'Review last week: outreach sent, replies, any sales?', meta: 'Review', prompt: 'Help me review last week. Here is my pipeline status: [paste stats]. What worked, what to do differently next week?' },
+      { id: 'sun5', text: 'Check Gumroad dashboard for any new sales or activity', meta: 'Admin', goto: 'https://app.gumroad.com/dashboard' }
+    ]
+  },
+  1: { // Monday
+    label: 'Monday — Twitter/X Blitz',
+    emoji: '🐦',
+    tasks: [
+      { id: 'mon1', text: 'Check email + LinkedIn for replies from last week\'s outreach', meta: 'Morning routine · 5 min' },
+      { id: 'mon2', text: 'Review pipeline — update stages for any leads who responded', meta: 'Morning routine · 5 min', goto: 'pipeline' },
+      { id: 'mon3', text: 'Reply to 10 tweets in: #AItools #sidehustle #makemoneyonline #freelancer', meta: 'Twitter Blitz · 10 min', prompt: 'Give me 10 engaging reply ideas for tweets about AI tools, side hustles, or making money online. Each reply should add value and hint at my products without being spammy.' },
+      { id: 'mon4', text: 'Send 5 DMs to engaged Twitter/X profiles who posted about AI or income', meta: 'Outreach · 10 min', prompt: 'Write 3 variations of a Twitter DM template to send to people who post about AI tools, side hustles, or freelancing. Reference my Maximus AI products. Keep it natural, not salesy.' },
+      { id: 'mon5', text: 'Post 1 value tweet (AI tip or income stream idea)', meta: 'Content · 2 min', prompt: 'Write me a high-value tweet about using AI to build a side hustle or freelance business. Should be punchy, insightful, and get engagement. Soft-mention my AI toolkit.' },
+      { id: 'mon6', text: 'Log all today\'s outreach in the Outreach Log tab', meta: 'End of day', goto: 'outreach' }
+    ]
+  },
+  2: { // Tuesday
+    label: 'Tuesday — Instagram Outreach',
+    emoji: '📸',
+    tasks: [
+      { id: 'tue1', text: 'Check email + DMs for any overnight replies', meta: 'Morning routine · 5 min' },
+      { id: 'tue2', text: 'Comment on 15 posts: #sidehustle #contentcreator #digitalmarketing', meta: 'Instagram · 10 min', prompt: 'Write 10 engaging Instagram comment templates I can customize for posts about side hustles, content creation, and digital marketing. Each should be 1-2 sentences, add real value, and be conversation-starting.' },
+      { id: 'tue3', text: 'DM 5 content creators who posted about AI, business, or making money', meta: 'Instagram DMs · 10 min', prompt: 'Write 3 Instagram DM templates to send to content creators. I\'m pitching my AI toolkit bundles (starting at $9). Personalize by referencing their content niche.' },
+      { id: 'tue4', text: 'Post 1 Reel or Story showing a product demo or result', meta: 'Content · 5 min', prompt: 'Write a script for a 30-second Instagram Reel showing how the AI Prompt Pack saves time for content creators. Include a hook, demo moment, and CTA.' },
+      { id: 'tue5', text: 'Follow up with Monday replies — push to next stage', meta: 'Follow-up', goto: 'pipeline' },
+      { id: 'tue6', text: 'Log all outreach in Outreach Log', meta: 'End of day', goto: 'outreach' }
+    ]
+  },
+  3: { // Wednesday
+    label: 'Wednesday — Cold Email Day',
+    emoji: '📧',
+    tasks: [
+      { id: 'wed1', text: 'Check for replies to Monday/Tuesday outreach', meta: 'Morning routine · 5 min' },
+      { id: 'wed2', text: 'Send 10 cold emails to Prospects in pipeline (prioritize highest-value targets)', meta: 'Cold Email · 15 min', prompt: 'Write 3 cold email templates for my pipeline prospects. They are digital marketing agency owners, content creators, and freelancers. Pitch my AI toolkit products. Keep under 120 words each. Include a low-friction CTA.' },
+      { id: 'wed3', text: 'Target: agency owners, freelancers, content creators in your leads list', meta: 'Research', goto: 'leads' },
+      { id: 'wed4', text: 'Find 5 new leads from LinkedIn to add to prospect column', meta: 'Prospecting', prompt: 'Give me a search strategy and ideal prospect profile for finding digital marketing agency owners and content creators on LinkedIn who would benefit from AI productivity tools.' },
+      { id: 'wed5', text: 'Follow up on Monday DMs that haven\'t replied yet', meta: 'Follow-up · 5 min', prompt: 'Write a short, friendly follow-up message for someone I DMed 2 days ago about my AI tools. They haven\'t replied. Keep it brief and add new value.' },
+      { id: 'wed6', text: 'Log cold emails in Outreach Log, update lead stages', meta: 'End of day', goto: 'outreach' }
+    ]
+  },
+  4: { // Thursday
+    label: 'Thursday — LinkedIn + Reddit',
+    emoji: '💼',
+    tasks: [
+      { id: 'thu1', text: 'Check email for cold email replies from Wednesday', meta: 'Morning routine · 5 min' },
+      { id: 'thu2', text: 'Connect with 10 solopreneurs/freelancers/agency owners on LinkedIn', meta: 'LinkedIn · 8 min', prompt: 'Write a LinkedIn connection request note (under 300 chars) for digital marketing professionals, agency owners, and freelancers. Mention AI productivity. Don\'t pitch immediately.' },
+      { id: 'thu3', text: 'Send 5 LinkedIn DMs to new connections from this week', meta: 'LinkedIn DMs · 10 min', prompt: 'Write 3 LinkedIn DM templates for agency owners and marketing professionals. Introduce my AI toolkit products naturally. Mention the Mega Bundle value prop ($79 value for $59).' },
+      { id: 'thu4', text: 'Answer 3 questions on r/sidehustle or r/Entrepreneur — add value', meta: 'Reddit · 10 min', prompt: 'What are 3 common questions on r/sidehustle or r/Entrepreneur that I could authentically answer while subtly referencing my AI tools? Give me the answer templates too.' },
+      { id: 'thu5', text: 'Post 1 LinkedIn article or post about AI for freelancers', meta: 'Content · 5 min', prompt: 'Write a LinkedIn post about how freelancers can use AI tools to get their first paying client faster. Position it as a value post, mention my Freelancer Starter Kit at the end.' },
+      { id: 'thu6', text: 'Log all LinkedIn + Reddit activity in Outreach Log', meta: 'End of day', goto: 'outreach' }
+    ]
+  },
+  5: { // Friday
+    label: 'Friday — Follow-Up & Pipeline Review',
+    emoji: '🔄',
+    tasks: [
+      { id: 'fri1', text: 'Check ALL channels for replies received this week', meta: 'Morning · 10 min' },
+      { id: 'fri2', text: 'Follow up with EVERY lead who hasn\'t replied from Mon–Thu', meta: 'Follow-ups · 10 min', prompt: 'Write a Friday follow-up message for leads who received outreach earlier this week but haven\'t replied. Keep it very short, friendly, and add one new piece of value (tip or stat).' },
+      { id: 'fri3', text: 'Move engaged leads to their correct pipeline stage', meta: 'Pipeline cleanup', goto: 'pipeline' },
+      { id: 'fri4', text: 'Send "Value Drop" email #2 to cold email prospects (new tip, no pitch)', meta: 'Email · 8 min', prompt: 'Write a "value drop" email #2 for my cold email prospects. No direct pitch. Just share one genuinely useful AI tip or strategy for digital marketers. Build trust. Mention my store link casually at the bottom.' },
+      { id: 'fri5', text: 'Review and clean up pipeline: remove dead leads, update notes', meta: 'Pipeline hygiene', goto: 'pipeline' },
+      { id: 'fri6', text: 'Log this week\'s totals: DMs sent, emails sent, replies, sales', meta: 'End of week review', goto: 'goals' }
+    ]
+  },
+  6: { // Saturday
+    label: 'Saturday — Content Creation & Strategy',
+    emoji: '🎬',
+    tasks: [
+      { id: 'sat1', text: 'Create 2 TikTok/Reels videos showing AI tools in action', meta: 'Content · 30 min', prompt: 'Write 2 TikTok video scripts (30-45 sec each). Topic 1: "5 AI prompts that save freelancers 3 hours/week." Topic 2: "How I built a $500/month digital product store using AI." Include hooks, value moments, and CTAs to Gumroad.' },
+      { id: 'sat2', text: 'Write 5 tweets to schedule for next week (Mon–Fri)', meta: 'Content · 15 min', prompt: 'Write 5 tweets for next week, one per day Mon-Fri. Topics: AI productivity tip, income stream idea, freelancer hack, digital product tip, motivational. Include 1-2 that softly mention my products.' },
+      { id: 'sat3', text: 'Review week\'s metrics: outreach sent, replies, conversion rate', meta: 'Weekly review', goto: 'goals' },
+      { id: 'sat4', text: 'Check Gumroad analytics and update product sales in Products tab', meta: 'Admin', goto: 'products' },
+      { id: 'sat5', text: 'Plan next week\'s priority leads and outreach targets', meta: 'Strategy', prompt: 'Based on a pipeline of 40 leads (mostly prospects and outreach stage), help me build a priority list for next week\'s outreach. What criteria should I use to rank them, and what product should I pitch to each type?' }
+    ]
+  }
+};
+
+const UNIVERSAL_MORNING = [
+  { id: 'ub1', text: 'Check email for any replies or new leads', meta: 'Morning · 2 min' },
+  { id: 'ub2', text: 'Check Gumroad for new sales or notifications', meta: 'Morning · 1 min', goto: 'https://app.gumroad.com/dashboard' },
+  { id: 'ub3', text: 'Review hot leads and follow-up priority contacts', meta: 'Morning · 3 min', goto: 'pipeline' }
+];
+
+function getTodayKey() {
+  return 'playbook_' + new Date().toISOString().slice(0, 10);
+}
+
+function getCheckedState() {
+  try { return JSON.parse(localStorage.getItem(getTodayKey()) || '{}'); } catch(e) { return {}; }
+}
+
+function setCheckedState(state) {
+  try { localStorage.setItem(getTodayKey(), JSON.stringify(state)); } catch(e) {}
+}
+
+function toggleTask(taskId) {
+  const state = getCheckedState();
+  state[taskId] = !state[taskId];
+  setCheckedState(state);
+  renderPlaybook();
+}
+
+function resetDayChecklist() {
+  try { localStorage.removeItem(getTodayKey()); } catch(e) {}
+  renderPlaybook();
+  showToast('Checklist reset for today');
+}
+
+function copyPrompt(prompt) {
+  navigator.clipboard.writeText(prompt).then(() => {
+    showToast('✅ Prompt copied! Paste it into the Claude chat →');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = prompt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✅ Prompt copied! Paste it into the Claude chat →');
+  });
+}
+
+function goToTab(tab) {
+  if (tab.startsWith('http')) { window.open(tab, '_blank'); return; }
+  const t = document.querySelector(`[data-tab="${tab}"]`);
+  if (t) t.click();
+}
+
+function buildChecklistSection(title, emoji, tasks, state) {
+  const done = tasks.filter(t => state[t.id]).length;
+  const total = tasks.length;
+  const items = tasks.map(t => {
+    const checked = !!state[t.id];
+    const actions = [];
+    if (t.prompt) actions.push(`<button class="btn-claude" onclick="copyPrompt(${JSON.stringify(t.prompt)})">🤖 Ask Claude</button>`);
+    if (t.goto) actions.push(`<button class="btn-goto" onclick="goToTab('${t.goto}')">→ Open</button>`);
+    return `<div class="checklist-item ${checked ? 'done' : ''}" >
+      <div class="ci-checkbox ${checked ? 'checked' : ''}" onclick="toggleTask('${t.id}')"></div>
+      <div class="ci-body">
+        <div class="ci-text">${t.text}</div>
+        ${t.meta ? `<div class="ci-meta">${t.meta}</div>` : ''}
+        ${actions.length ? `<div class="ci-actions">${actions.join('')}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="checklist-card">
+    <div class="checklist-card-header">
+      <span class="ch-title">${emoji} ${title}</span>
+      <span class="ch-count">${done}/${total}</span>
+    </div>
+    ${items}
+  </div>`;
+}
+
+function renderPlaybook() {
+  const now = new Date();
+  const dayIdx = now.getDay();
+  const dayPlan = DAY_PLANS[dayIdx];
+  const state = getCheckedState();
+
+  // Header
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById('playbookDayLabel').textContent = dayPlan.emoji + ' ' + dayPlan.label;
+  document.getElementById('playbookDateHeading').textContent = dateStr;
+
+  // Build checklists
+  const allTasks = [...UNIVERSAL_MORNING, ...dayPlan.tasks];
+  const doneCount = allTasks.filter(t => state[t.id]).length;
+  document.getElementById('playbookDoneCount').textContent = doneCount;
+  document.getElementById('playbookTotalCount').textContent = allTasks.length;
+  document.getElementById('playbookProgressFill').style.width = Math.round(doneCount / allTasks.length * 100) + '%';
+
+  const col = document.getElementById('playbookChecklistsCol');
+  col.innerHTML =
+    buildChecklistSection('Morning Check-In', '☀️', UNIVERSAL_MORNING, state) +
+    buildChecklistSection(dayPlan.label, dayPlan.emoji, dayPlan.tasks, state);
+
+  // Pipeline stats
+  const hotLeads = leads.filter(l => l.stage === 'hot');
+  const engagedLeads = leads.filter(l => l.stage === 'engaged');
+  const outreachLeads = leads.filter(l => l.stage === 'outreach');
+  document.getElementById('pb-prospects').textContent = leads.filter(l => l.stage === 'prospect').length;
+  document.getElementById('pb-outreach').textContent = outreachLeads.length;
+  document.getElementById('pb-engaged').textContent = engagedLeads.length;
+  document.getElementById('pb-hot').textContent = hotLeads.length;
+  document.getElementById('pb-sold').textContent = leads.filter(l => l.stage === 'closed').length;
+  document.getElementById('pb-totalLeads').textContent = leads.length;
+  document.getElementById('pb-weekOutreach').textContent = outreachLog.length;
+  document.getElementById('pb-revenue').textContent = '$' + calculateTotalRevenue();
+  document.getElementById('pb-hotCount').textContent = hotLeads.length + ' hot lead' + (hotLeads.length !== 1 ? 's' : '');
+  document.getElementById('pb-followUpCount').textContent = outreachLeads.length + ' outreach pending reply';
+
+  // Priority focus leads (hot + engaged + oldest outreach)
+  const priorityLeads = [
+    ...hotLeads,
+    ...engagedLeads,
+    ...outreachLeads.sort((a,b) => (b.outreachCount||0) - (a.outreachCount||0)).slice(0, 3)
+  ].slice(0, 6);
+
+  const fl = document.getElementById('focusLeadsList');
+  if (priorityLeads.length === 0) {
+    fl.innerHTML = '<div style="color:#555;font-size:0.85rem;padding:8px 0;">No hot or engaged leads yet — keep pushing outreach!</div>';
+  } else {
+    fl.innerHTML = priorityLeads.map(l => {
+      const info = parseLead(l);
+      const stageClass = l.stage === 'hot' ? 'hot' : l.stage === 'engaged' ? 'engaged' : 'outreach';
+      return `<div class="focus-lead-row" onclick="openModal(${l.id})">
+        <div>
+          <div class="flr-name">${l.name}</div>
+          <div class="flr-meta">${info.business || l.audience} · ${l.product.match(/\$\d+/)?.[0] || ''}</div>
+        </div>
+        <span class="flr-badge ${stageClass}">${l.stage}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ============ OVERRIDE refreshPipeline TO SUPPORT FILTERS ============
+const _origRefreshPipeline = refreshPipeline;
+function refreshPipeline() {
+  const search = document.getElementById('pipelineSearch')?.value || '';
+  const channel = document.getElementById('filterChannel')?.value || '';
+  const product = document.getElementById('filterProduct')?.value || '';
+  const audience = document.getElementById('filterAudience')?.value || '';
+  const isFiltered = search || channel || product || audience;
+  const badge = document.getElementById('filterActiveBadge');
+  if (badge) badge.style.display = isFiltered ? 'inline-block' : 'none';
+
+  const filtered = isFiltered ? getFilteredLeads() : leads;
+  const stages = ['prospect', 'outreach', 'engaged', 'hot', 'closed'];
+  stages.forEach(stage => {
+    const container = document.getElementById('col-' + stage + '-cards');
+    if (!container) return;
+    const stageLeads = filtered.filter(l => l.stage === stage);
+    document.getElementById('count-' + stage).textContent = stageLeads.length + ' lead' + (stageLeads.length !== 1 ? 's' : '');
+    if (stageLeads.length === 0) {
+      container.innerHTML = '<div style="color:#444;font-size:0.8rem;text-align:center;padding:20px;">' + (isFiltered ? 'No matches' : 'No leads yet') + '</div>';
+      return;
+    }
+    container.innerHTML = stageLeads.map(lead => {
+      const info = parseLead(lead);
+      const outreachCount = outreachLog.filter(o => o.leadId === lead.id).length;
+      return `<div class="deal-card" draggable="true" onclick="openModal(${lead.id})"
+        ondragstart="event.dataTransfer.setData('leadId','${lead.id}');this.classList.add('dragging')"
+        ondragend="this.classList.remove('dragging')">
+        <div class="deal-name">${lead.name}</div>
+        ${info.business ? `<div class="deal-biz">${info.business}</div>` : ''}
+        ${info.role ? `<div class="deal-role">${info.role}</div>` : `<div class="deal-role">${lead.audience}</div>`}
+        ${info.location ? `<div class="deal-location">${info.location}</div>` : ''}
+        <div class="deal-product">${lead.product}</div>
+        <div class="deal-value">${lead.product.match(/\$\d+/) ? lead.product.match(/\$\d+/)[0] : ''}${outreachCount > 0 ? ` · ${outreachCount} touch${outreachCount > 1 ? 'es' : ''}` : ''}</div>
+      </div>`;
+    }).join('');
+  });
+
+  // Also update playbook if visible
+  if (document.getElementById('tab-today')?.classList.contains('active')) renderPlaybook();
+}
+
+// ============ INIT ============
+refreshAll();
+calculateRevenue();
+renderPlaybook();
+</script>
+
+</body>
+</html>
